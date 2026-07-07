@@ -1,3 +1,13 @@
+"""
+Tool registration for pico-agents.
+
+A `Tool` wraps a plain Python function and auto-derives the JSON schema
+that the Claude API's tool-use interface expects, by inspecting the
+function's type hints and docstring. This is the same mechanic that
+LangChain/LangGraph hide behind their `@tool` decorators -- reimplemented
+here 
+"""
+
 import inspect
 import typing
 from dataclasses import dataclass, field

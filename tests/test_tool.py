@@ -1,4 +1,4 @@
-from pico_agents.tool import tool
+from pico_agents.tools import tool
 
 def test_tool_schema():
     @tool
