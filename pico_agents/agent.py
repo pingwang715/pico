@@ -6,12 +6,15 @@ own agent classes: call the model, check if it wants a tool, run the tool,
 feed the result back, repeat until the model produces a final text answer.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any
 
 import anthropic
 
 from .tools import Tool
+from .tracer import Tracer
 
 DEFAULT_MODEL = "claude-sonnet-4-5"
 
@@ -45,12 +48,15 @@ class Agent:
         self,
         user_message: str,
         context: dict[str, Any] | None = None,
+        tracer: Tracer | None = None,
     ) -> AgentResult:
         """
         Run the agent to completion: repeatedly call the model, execute any
         requested tools, and feed results back until the model stops asking
         for tools and returns a final text response.
         """
+
+        span_id = tracer.start_span("agent_run", self.name, input=user_message) if tracer else None
 
         full_prompt = user_message
         if context:
@@ -80,6 +86,8 @@ class Agent:
                     tool_calls=tool_calls_log,
                     raw_messages=messages,
                 )
+                if tracer and span_id
+                    tracer.end_span(span_id, output=text)
                 return result
         
             # Model wants to use one or more tools
@@ -90,7 +98,10 @@ class Agent:
                 if block.type != "tool_use":
                     continue
                 tool_name = block.name
-                tool_input = block.input_schema
+                tool_input = block.input
+                tool_span_id = tracer.start_span(
+                    "tool_call", tool_name, input=tool_input
+                ) if tracer else None
 
                 if tool_name not in self.tools:
                     ouput = f"Error: unknown tool '{tool_name}'"
@@ -99,6 +110,9 @@ class Agent:
                         output = self.tools[tool_name](**tool_input)
                     except Exception as exc: # tool failures shouldn't crash the run
                         output =f"Error running tool '{tool_name}': {exc}"
+                
+                if tracer and tool_span_id:
+                    tracer.end_span(tool_span_id, output=output)
                 
                 tool_calls_log.append({"tool": tool_name, "input": tool_input, "output": output})
                 tool_results. append({
@@ -116,6 +130,8 @@ class Agent:
             tool_calls=tool_calls_log,
             raw_messages=messages,
         )
+        if tracer and span_id:
+            tracer.end_span(span_id, output=result.text)
         return result
 
     @staticmethod
