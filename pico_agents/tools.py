@@ -29,6 +29,9 @@ class Tool:
     func: Callable
     schema: dict
 
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
     def to_api_schema(self) -> dict:
         """Return the dict shape expected by the Anthropic Messages API tools param."""
         return {

@@ -86,7 +86,7 @@ class Agent:
                     tool_calls=tool_calls_log,
                     raw_messages=messages,
                 )
-                if tracer and span_id
+                if tracer and span_id:
                     tracer.end_span(span_id, output=text)
                 return result
         
