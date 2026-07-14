@@ -13,8 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from .agent from Agent
-from .tracer from Tracer
+from .agent import Agent
+from .tracer import Tracer
 
 NodeFn = Callable[[dict], [dict]] # takes state, returns state udpates to merge in
 

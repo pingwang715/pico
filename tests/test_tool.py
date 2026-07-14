@@ -4,15 +4,20 @@ from demo.claim_tools import lookup_policy, verify_weather_event, get_claim_hist
 def test_tool_schema():
     @tool
     def get_weather(city: str, country: str = "AU") -> str:
-        """Look up weather.
+        """Look up current weather for a city.
         :param city: City name
+        :param country: ISO country code
         """
-        return "sunny"
+        return f"sunny in {city}, {country}"
 
     assert get_weather.name == "get_weather"
-    assert "city" in get_weather.schema["properties"]
-    assert get_weather.schema["required"] == ["city"]
-
+    assert get_weather.description == "Look up current weather for a city."
+    schema = get_weather.schema
+    assert schema["properties"]["city"]["type"] == "string"
+    assert schema["properties"]["city"]["description"] == "City name"
+    assert schema["required"] == ["city"] # country has as default, so no required
+    assert get_weather(city="Adelaide") == "sunny in Adelaide, AU"
+    
 def test_tool_demo():
     @tool
     def lookup_policy(customer_id: str) -> dict:
@@ -61,3 +66,8 @@ def test_tool_demo():
         result = calculate_payout(100, 1000, 20)
         assert result["payout_aud"] == 80.0
 
+
+if __name__ == "__main__":
+    test_tool_schema()
+    test_tool_demo()
+    print("All tests passed.")
